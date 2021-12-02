@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>bundleid</key>
+	<string>com.github.inoue441.alfred-cf</string>
+	<key>connections</key>
+	<dict>
+		<key>50B0CD10-4D52-4898-9C05-DD3A34A829C3</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>49F7CB30-AA57-4C9B-AFD4-2E7702177A68</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+			<dict>
+				<key>destinationuid</key>
+				<string>A23DAA3F-BE28-4769-9818-A24CB5D744D2</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+			<dict>
+				<key>destinationuid</key>
+				<string>D37D1EC5-136D-4FDF-AC34-7F92A8D003BC</string>
+				<key>modifiers</key>
+				<integer>1048576</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>5D230471-43F1-4FDD-ABE3-02B16F2B1BCF</key>
+		<array/>
+		<key>A23DAA3F-BE28-4769-9818-A24CB5D744D2</key>
+		<array/>
+		<key>D37D1EC5-136D-4FDF-AC34-7F92A8D003BC</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>5D230471-43F1-4FDD-ABE3-02B16F2B1BCF</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+	</dict>
+	<key>createdby</key>
+	<string>inoue441</string>
+	<key>description</key>
+	<string>コピー元チケットを探す</string>
+	<key>disabled</key>
+	<false/>
+	<key>name</key>
+	<string>コピー元チケット</string>
+	<key>objects</key>
+	<array>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alfredfiltersresults</key>
+				<false/>
+				<key>alfredfiltersresultsmatchmode</key>
+				<integer>2</integer>
+				<key>argumenttreatemptyqueryasnil</key>
+				<false/>
+				<key>argumenttrimmode</key>
+				<integer>0</integer>
+				<key>argumenttype</key>
+				<integer>1</integer>
+				<key>escaping</key>
+				<integer>127</integer>
+				<key>keyword</key>
+				<string>cf</string>
+				<key>queuedelaycustom</key>
+				<integer>3</integer>
+				<key>queuedelayimmediatelyinitially</key>
+				<false/>
+				<key>queuedelaymode</key>
+				<integer>0</integer>
+				<key>queuemode</key>
+				<integer>1</integer>
+				<key>runningsubtext</key>
+				<string></string>
+				<key>script</key>
+				<string>&lt;?php
+
+$query = trim($argv[1]);
+$query = iconv("UTF-8-MAC", "UTF-8", $query); // 濁点を検索するための対応
+
+$source = file_get_contents('issues.json');
+$data = json_decode($source, JSON_OBJECT_AS_ARRAY);
+
+$items = array_values(array_filter($data['items'], function($v) use ($query) {
+    if (!strlen($query)) {
+        return true;
+    }
+
+    return stripos($v['title'], $query) !== false;
+}));
+
+echo json_encode(compact('items'));</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
+				<string>filter</string>
+				<key>subtext</key>
+				<string>Generate results into Alfred from JSON</string>
+				<key>title</key>
+				<string>Script Filter JSON format</string>
+				<key>type</key>
+				<integer>1</integer>
+				<key>withspace</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>50B0CD10-4D52-4898-9C05-DD3A34A829C3</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>100</integer>
+				<key>script</key>
+				<string>&lt;?php
+
+date_default_timezone_set('Asia/Tokyo');
+
+$query = $argv[1];
+
+$source = file_get_contents('issues.json');
+$data = json_decode($source, JSON_OBJECT_AS_ARRAY);
+
+$found = array_values(array_filter($data['items'], function ($v) use ($query) {
+    return (int)$v['number'] === (int)$query;
+}));
+$found[0]['count'] = (int)$found[0]['count'] + 1;
+$found[0]['modified'] = date('Y-m-d H:i:s');
+
+$items = $found;
+foreach ($data['items'] as $item) {
+    if ((int)$item['number'] === (int)$query) {
+        continue;
+    }
+
+    $items[] = $item;
+}
+
+file_put_contents('issues.json', json_encode(compact('items'), JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT));</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
+				<string></string>
+				<key>type</key>
+				<integer>1</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>49F7CB30-AA57-4C9B-AFD4-2E7702177A68</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>autopaste</key>
+				<false/>
+				<key>clipboardtext</key>
+				<string>{query}</string>
+				<key>ignoredynamicplaceholders</key>
+				<false/>
+				<key>transient</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.output.clipboard</string>
+			<key>uid</key>
+			<string>A23DAA3F-BE28-4769-9818-A24CB5D744D2</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>browser</key>
+				<string></string>
+				<key>spaces</key>
+				<string></string>
+				<key>url</key>
+				<string>{var:redmine}/issues/{query}</string>
+				<key>utf8</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.openurl</string>
+			<key>uid</key>
+			<string>5D230471-43F1-4FDD-ABE3-02B16F2B1BCF</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>autopaste</key>
+				<false/>
+				<key>clipboardtext</key>
+				<string>{query}</string>
+				<key>ignoredynamicplaceholders</key>
+				<false/>
+				<key>transient</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.output.clipboard</string>
+			<key>uid</key>
+			<string>D37D1EC5-136D-4FDF-AC34-7F92A8D003BC</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
+	</array>
+	<key>readme</key>
+	<string></string>
+	<key>uidata</key>
+	<dict>
+		<key>49F7CB30-AA57-4C9B-AFD4-2E7702177A68</key>
+		<dict>
+			<key>xpos</key>
+			<integer>225</integer>
+			<key>ypos</key>
+			<integer>40</integer>
+		</dict>
+		<key>50B0CD10-4D52-4898-9C05-DD3A34A829C3</key>
+		<dict>
+			<key>note</key>
+			<string>チケットを絞り込む</string>
+			<key>xpos</key>
+			<integer>40</integer>
+			<key>ypos</key>
+			<integer>40</integer>
+		</dict>
+		<key>5D230471-43F1-4FDD-ABE3-02B16F2B1BCF</key>
+		<dict>
+			<key>note</key>
+			<string>チケットをブラウザで開く</string>
+			<key>xpos</key>
+			<integer>405</integer>
+			<key>ypos</key>
+			<integer>300</integer>
+		</dict>
+		<key>A23DAA3F-BE28-4769-9818-A24CB5D744D2</key>
+		<dict>
+			<key>xpos</key>
+			<integer>225</integer>
+			<key>ypos</key>
+			<integer>170</integer>
+		</dict>
+		<key>D37D1EC5-136D-4FDF-AC34-7F92A8D003BC</key>
+		<dict>
+			<key>xpos</key>
+			<integer>225</integer>
+			<key>ypos</key>
+			<integer>300</integer>
+		</dict>
+	</dict>
+	<key>variables</key>
+	<dict>
+		<key>redmine</key>
+		<string>https://redmine.openlogi.com</string>
+	</dict>
+	<key>variablesdontexport</key>
+	<array>
+		<string>redmine</string>
+	</array>
+	<key>version</key>
+	<string>0.1.0</string>
+	<key>webaddress</key>
+	<string>https://github.com/inoue441/alfred-cf</string>
+</dict>
+</plist>
